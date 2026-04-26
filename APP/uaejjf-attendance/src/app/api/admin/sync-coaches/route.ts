@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 const SHEET_ID = '1UiaSqyFJp6uHv-SAgxOBy7kAnTe4icb6Lj-efpDgOpY'
-const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Data`
+// Use the direct export URL — more reliable for authenticated/public sheets
+const SHEET_CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = []
@@ -76,6 +77,9 @@ export async function POST() {
     return NextResponse.json({ error: 'Could not find required columns in sheet' }, { status: 422 })
   }
 
+  const iProject = col('PROJECT')
+  const iSupervisor = col('SUPERVISOR')
+
   const sheetPsNumbers = new Set<string>()
   const rows: Array<{
     ps_number: string
@@ -85,6 +89,8 @@ export async function POST() {
     gender: 'Male' | 'Female' | null
     date_of_birth: string | null
     start_date: string | null
+    project: string | null
+    sheet_supervisor: string | null
     active: boolean
   }> = []
 
@@ -105,6 +111,8 @@ export async function POST() {
       gender: (iGender !== -1 ? mapGender(cols[iGender] ?? '') : null) as 'Male' | 'Female' | null,
       date_of_birth: iDOB !== -1 ? parseDate(cols[iDOB] ?? '', true) : null,
       start_date: iDOJ !== -1 ? parseDate(cols[iDOJ] ?? '', false) : null,
+      project: iProject !== -1 ? (cols[iProject]?.trim() || null) : null,
+      sheet_supervisor: iSupervisor !== -1 ? (cols[iSupervisor]?.trim() || null) : null,
       active: true,
     })
   }

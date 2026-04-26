@@ -31,9 +31,9 @@ export interface Database {
         Relationships: []
       }
       coaches: {
-        Row: { ps_number: string; user_id: string | null; name: string; email: string | null; phone: string | null; date_of_birth: string | null; gender: 'Male' | 'Female' | null; start_date: string | null; active: boolean; created_at: string; updated_at: string }
-        Insert: { ps_number: string; user_id?: string | null; name: string; email?: string | null; phone?: string | null; date_of_birth?: string | null; gender?: 'Male' | 'Female' | null; start_date?: string | null; active?: boolean }
-        Update: { user_id?: string | null; name?: string; email?: string | null; phone?: string | null; date_of_birth?: string | null; gender?: 'Male' | 'Female' | null; start_date?: string | null; active?: boolean }
+        Row: { ps_number: string; user_id: string | null; name: string; email: string | null; phone: string | null; date_of_birth: string | null; gender: 'Male' | 'Female' | null; start_date: string | null; active: boolean; project: string | null; sheet_supervisor: string | null; created_at: string; updated_at: string }
+        Insert: { ps_number: string; user_id?: string | null; name: string; email?: string | null; phone?: string | null; date_of_birth?: string | null; gender?: 'Male' | 'Female' | null; start_date?: string | null; active?: boolean; project?: string | null; sheet_supervisor?: string | null }
+        Update: { user_id?: string | null; name?: string; email?: string | null; phone?: string | null; date_of_birth?: string | null; gender?: 'Male' | 'Female' | null; start_date?: string | null; active?: boolean; project?: string | null; sheet_supervisor?: string | null }
         Relationships: []
       }
       supervisors: {

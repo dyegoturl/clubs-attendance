@@ -14,7 +14,7 @@ export default async function AdminUsersPage() {
   if (profile?.role !== 'admin') redirect('/login')
 
   const [coachesRes, supervisorsRes, scaRes] = await Promise.all([
-    supabase.from('coaches').select('ps_number, name, email, date_of_birth, gender').order('name'),
+    supabase.from('coaches').select('ps_number, name, email, date_of_birth, gender, active, project, sheet_supervisor').order('name'),
     supabase.from('supervisors').select('id, name, email, whatsapp').order('name'),
     supabase.from('supervisor_coach_assignments')
       .select('coach_ps_number, supervisor_id')
@@ -29,7 +29,7 @@ export default async function AdminUsersPage() {
 
   const coaches = (coachesRes.data ?? []).map(c => ({
     ...c,
-    supervisor_name: coachSupervisorMap[c.ps_number] ?? null,
+    assignment_supervisor: coachSupervisorMap[c.ps_number] ?? null,
   }))
 
   return (
