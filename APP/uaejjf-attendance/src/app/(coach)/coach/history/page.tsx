@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import CoachHistory from '@/components/coach/CoachHistory'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HistoryPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

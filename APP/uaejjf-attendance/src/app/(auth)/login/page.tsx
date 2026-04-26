@@ -17,7 +17,6 @@ type FormData = z.infer<typeof schema>
 
 export default function LoginPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -27,6 +26,7 @@ export default function LoginPage() {
 
   async function onSubmit(data: FormData) {
     setLoading(true)
+    const supabase = createClient()
     try {
       // Look up coach by PS number to get their email (used as Supabase auth identity)
       const { data: coach, error: coachErr } = await supabase

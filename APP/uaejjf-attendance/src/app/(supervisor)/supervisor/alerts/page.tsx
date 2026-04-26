@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import AlertsFeed from '@/components/supervisor/AlertsFeed'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SupervisorAlertsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

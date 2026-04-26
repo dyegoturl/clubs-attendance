@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import ClubsManager from '@/components/admin/ClubsManager'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminClubsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

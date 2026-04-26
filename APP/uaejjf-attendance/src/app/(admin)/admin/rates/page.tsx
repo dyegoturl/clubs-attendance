@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import RatesManager from '@/components/admin/RatesManager'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AdminRatesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

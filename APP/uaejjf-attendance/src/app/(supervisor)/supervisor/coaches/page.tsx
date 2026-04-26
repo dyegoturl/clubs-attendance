@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import SupervisorCoachesList from '@/components/supervisor/SupervisorCoachesList'
 
+export const dynamic = 'force-dynamic'
+
 export default async function SupervisorCoachesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

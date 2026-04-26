@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import AssignmentsManager from '@/components/supervisor/AssignmentsManager'
 
+export const dynamic = 'force-dynamic'
+
 export default async function AssignmentsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
