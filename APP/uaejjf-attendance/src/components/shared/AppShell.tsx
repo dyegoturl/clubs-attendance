@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, CalendarCheck, History, Bell, Users, Settings,
+  LayoutDashboard, CalendarCheck, History, Bell, Users, Settings, SlidersHorizontal,
   LogOut, ClipboardList, BarChart3, Shield, ChevronLeft, ChevronRight, Menu, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -36,6 +36,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
     { href: '/admin/rates', label: 'Class Rates', icon: Settings },
     { href: '/admin/audit', label: 'Audit Log', icon: Shield },
+    { href: '/admin/settings', label: 'Settings', icon: SlidersHorizontal },
   ],
 }
 
