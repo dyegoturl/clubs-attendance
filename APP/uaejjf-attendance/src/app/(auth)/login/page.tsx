@@ -36,19 +36,21 @@ export default function LoginPage() {
         .single()
 
       if (coachErr || !coach?.email) {
-        // Check supervisors
+        // Check supervisors (log in with email)
         const { data: supervisor } = await supabase
           .from('supervisors')
           .select('email')
-          .eq('email', data.ps_number) // supervisors log in with email
+          .eq('email', data.ps_number)
           .single()
 
-        if (!supervisor) {
+        // If not a coach or supervisor, try as email directly (admin accounts)
+        if (!supervisor && !data.ps_number.includes('@')) {
           toast.error('PS Number not found. Check your credentials.')
           return
         }
       }
 
+      // Coaches use their email, supervisors/admins type their email directly
       const loginEmail = coach?.email ?? data.ps_number
       const { error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
@@ -90,14 +92,14 @@ export default function LoginPage() {
             <ShieldCheck className="w-7 h-7 text-blue-400" />
           </div>
           <h1 className="text-xl font-semibold text-white">UAEJJF Attendance</h1>
-          <p className="text-sm text-slate-400 mt-1">Sign in with your PS Number</p>
+          <p className="text-sm text-slate-400 mt-1">Sign in with your PS Number or email</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">
-              PS Number
+              PS Number / Email
             </label>
             <input
               {...register('ps_number')}
