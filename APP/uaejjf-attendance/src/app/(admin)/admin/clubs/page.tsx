@@ -15,7 +15,7 @@ export default async function AdminClubsPage() {
 
   const [clubsRes, classesRes, regionsRes, programsRes] = await Promise.all([
     supabase.from('clubs').select('id, name, region_id, is_active').order('name'),
-    supabase.from('classes').select('id, club_id, class_type, class_identifier, time_start, time_end, days_of_week, program_id, duration_minutes, is_active').order('club_id'),
+    supabase.from('classes').select('id, club_id, class_type, class_identifier, gender, time_start, time_end, days_of_week, program_id, duration_minutes, is_active').order('club_id'),
     supabase.from('regions').select('id, name').order('name'),
     supabase.from('programs').select('id, name').order('name'),
   ])
