@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from 'react'
 import { toast } from 'sonner'
-import { Users, UserCheck, ChevronDown, ChevronUp, Mail, Phone, Filter } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Users, UserCheck, ChevronDown, ChevronUp, Mail, Phone, Filter, Building2 } from 'lucide-react'
+import { cn, formatDate } from '@/lib/utils'
 
 interface Coach {
   ps_number: string
@@ -15,6 +15,7 @@ interface Coach {
   project: string | null
   sheet_supervisor: string | null
   assignment_supervisor: string | null
+  clubs: { name: string; since: string }[]
 }
 
 interface Supervisor {
@@ -210,7 +211,9 @@ export default function UserManagement({ coaches, supervisors }: Props) {
                       <p className="text-xs text-slate-400 mt-0.5 truncate">
                         {coach.ps_number}
                         {coach.project && <span className="ml-1.5 text-blue-400/70">{coach.project}</span>}
-                        {coach.sheet_supervisor && <span className="ml-1.5">· {coach.sheet_supervisor}</span>}
+                        {coach.clubs.length > 0 && (
+                          <span className="ml-1.5">· {coach.clubs[0].name}{coach.clubs.length > 1 ? ` +${coach.clubs.length - 1}` : ''}</span>
+                        )}
                         {!coach.assignment_supervisor && coach.active && <span className="ml-1.5 text-amber-400/80">· Unassigned</span>}
                       </p>
                     </div>
@@ -230,11 +233,21 @@ export default function UserManagement({ coaches, supervisors }: Props) {
                       {coach.project && (
                         <p className="text-xs text-slate-400">Project: <span className="text-white">{coach.project}</span></p>
                       )}
-                      {coach.sheet_supervisor && (
-                        <p className="text-xs text-slate-400">Sheet supervisor: <span className="text-white">{coach.sheet_supervisor}</span></p>
+                      {coach.assignment_supervisor ? (
+                        <p className="text-xs text-slate-400">Supervisor: <span className="text-green-400">{coach.assignment_supervisor}</span></p>
+                      ) : (
+                        <p className="text-xs text-amber-400/80">No supervisor assigned</p>
                       )}
-                      {coach.assignment_supervisor && (
-                        <p className="text-xs text-slate-400">Assigned to: <span className="text-green-400">{coach.assignment_supervisor}</span></p>
+                      {coach.clubs.length > 0 && (
+                        <div className="space-y-1">
+                          {coach.clubs.map(club => (
+                            <div key={club.name} className="flex items-center gap-2 text-xs text-slate-400">
+                              <Building2 className="w-3.5 h-3.5 flex-shrink-0" />
+                              <span className="text-white">{club.name}</span>
+                              <span className="text-slate-500">since {formatDate(club.since)}</span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                       <div className="flex gap-2 pt-1">
                         <button
