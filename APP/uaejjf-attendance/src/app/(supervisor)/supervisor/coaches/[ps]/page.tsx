@@ -2,6 +2,7 @@ import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import AppShell from '@/components/shared/AppShell'
 import CoachDetailView from '@/components/supervisor/CoachDetailView'
+import AttendanceFlow from '@/components/coach/AttendanceFlow'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,7 +35,7 @@ export default async function CoachDetailPage({ params }: { params: { ps: string
   const firstDay = `${year}-${String(month).padStart(2, '0')}-01`
   const lastDay = new Date(year, month, 0).toISOString().split('T')[0]
 
-  const [coachRes, recordsRes, assignmentsRes, alertsRes] = await Promise.all([
+  const [coachRes, recordsRes, assignmentsRes, alertsRes, pendingSlotsRes] = await Promise.all([
     supabase.from('coaches').select('ps_number, name, email').eq('ps_number', params.ps).single(),
     supabase.from('attendance_records')
       .select('id, class_id, date, status, student_count, notes, is_late_report, is_adhoc, submitted_at')
@@ -45,20 +46,40 @@ export default async function CoachDetailPage({ params }: { params: { ps: string
       .select('class_id, club_name, class_type, class_identifier, time_start, time_end, program_name')
       .eq('coach_ps_number', params.ps),
     supabase.from('alerts').select('id').eq('supervisor_id', supervisor.id).eq('is_read', false),
+    supabase.from('daily_attendance_status')
+      .select('*')
+      .eq('coach_ps_number', params.ps)
+      .is('attendance_id', null),
   ])
 
   if (!coachRes.data) notFound()
 
+  const pendingSlots = pendingSlotsRes.data ?? []
+
   return (
     <AppShell role="supervisor" userName={supervisor.name} alertCount={alertsRes.data?.length ?? 0}>
-      <CoachDetailView
-        coach={coachRes.data}
-        records={recordsRes.data ?? []}
-        assignments={assignmentsRes.data ?? []}
-        year={year}
-        month={month}
-        supervisorId={supervisor.id}
-      />
+      <div className="space-y-8">
+        {pendingSlots.length > 0 && (
+          <div className="bg-[#1a1d27] border border-amber-500/30 rounded-xl p-5">
+            <h2 className="text-sm font-semibold text-amber-400 mb-4">
+              Submit attendance on behalf of {coachRes.data!.name}
+            </h2>
+            <AttendanceFlow
+              psNumber={supervisor.id}
+              pendingSlots={pendingSlots}
+              proxyFor={params.ps}
+            />
+          </div>
+        )}
+        <CoachDetailView
+          coach={coachRes.data!}
+          records={recordsRes.data ?? []}
+          assignments={assignmentsRes.data ?? []}
+          year={year}
+          month={month}
+          supervisorId={supervisor.id}
+        />
+      </div>
     </AppShell>
   )
 }

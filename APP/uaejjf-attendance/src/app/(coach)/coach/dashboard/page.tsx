@@ -26,6 +26,12 @@ export default async function CoachDashboardPage() {
     .select('*')
     .eq('coach_ps_number', psNumber)
 
+  // Get weekly assignments for the calendar
+  const { data: weekAssignments } = await supabase
+    .from('active_coach_assignments')
+    .select('class_id, class_identifier, class_type, gender, time_start, time_end, days_of_week, club_name')
+    .eq('coach_ps_number', psNumber)
+
   // Get pending days (unresolved attendance in the past)
   const { data: pendingDays } = await supabase
     .from('attendance_records')
@@ -57,6 +63,7 @@ export default async function CoachDashboardPage() {
         todayClasses={todayClasses ?? []}
         pendingCount={pendingDays?.length ?? 0}
         monthStats={{ present, cancelled, lateReports }}
+        weekSlots={weekAssignments?.map(a => ({ ...a, id: a.class_id })) ?? []}
       />
     </AppShell>
   )

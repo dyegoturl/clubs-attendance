@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Building2, Clock, ChevronDown, ChevronUp, MapPin } from 'lucide-react'
+import { Building2, Clock, ChevronDown, ChevronUp, MapPin, Filter } from 'lucide-react'
 import { cn, formatTimeRange } from '@/lib/utils'
+import WeeklyCalendar from '@/components/shared/WeeklyCalendar'
 
 interface Club {
   id: string
@@ -28,11 +29,24 @@ interface ClassRow {
 interface Region { id: string; name: string }
 interface Program { id: string; name: string }
 
+interface ClassWithCoach {
+  class_id: string
+  club_id: string
+  class_identifier: string | null
+  class_type: string | null
+  gender: string | null
+  time_start: string | null
+  time_end: string | null
+  days_of_week: string[] | null
+  coach_name: string
+}
+
 interface Props {
   clubs: Club[]
   classes: ClassRow[]
   regions: Region[]
   programs: Program[]
+  classesWithCoach: ClassWithCoach[]
 }
 
 const TYPE_STYLE: Record<string, { label: string; className: string }> = {
@@ -44,6 +58,12 @@ const GENDER_STYLE: Record<string, { label: string; className: string }> = {
   Male:   { label: 'Male',   className: 'bg-blue-500/10  text-blue-400  border-blue-500/20'  },
   Female: { label: 'Female', className: 'bg-pink-500/10  text-pink-400  border-pink-500/20'  },
   Mix:    { label: 'Mix',    className: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+}
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const DAY_ABBR: Record<string, string> = {
+  Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed',
+  Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat',
 }
 
 function TypeBadge({ value }: { value: string | null }) {
@@ -60,10 +80,16 @@ function GenderBadge({ value }: { value: string | null }) {
   return <span className={cn('text-xs border rounded px-1.5 py-0.5 font-medium', s.className)}>{s.label}</span>
 }
 
-export default function ClubsManager({ clubs, classes, regions, programs }: Props) {
+export default function ClubsManager({ clubs, classes, regions, programs, classesWithCoach }: Props) {
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
+
+  // Filters
+  const [filterRegion, setFilterRegion] = useState('')
+  const [filterType, setFilterType] = useState('')
+  const [filterGender, setFilterGender] = useState('')
+  const [filterDays, setFilterDays] = useState<string[]>([])
 
   const regionMap = Object.fromEntries(regions.map(r => [r.id, r.name]))
 
@@ -73,10 +99,43 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
     classesByClub[c.club_id].push(c)
   }
 
-  const filtered = clubs.filter(c =>
-    (showInactive || c.is_active) &&
-    c.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const hasFilters = filterRegion || filterType || filterGender || filterDays.length > 0
+
+  function clearFilters() {
+    setFilterRegion('')
+    setFilterType('')
+    setFilterGender('')
+    setFilterDays([])
+  }
+
+  function toggleDay(day: string) {
+    setFilterDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  function getFilteredClasses(clubId: string): ClassRow[] {
+    const all = (classesByClub[clubId] ?? []).filter(c => showInactive || c.is_active)
+    return all.filter(c => {
+      if (filterType && c.class_type !== filterType) return false
+      if (filterGender && c.gender !== filterGender) return false
+      if (filterDays.length > 0 && !filterDays.some(d => c.days_of_week?.includes(d))) return false
+      return true
+    })
+  }
+
+  const filtered = clubs.filter(club => {
+    if (!showInactive && !club.is_active) return false
+    if (search && !club.name.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterRegion && club.region_id !== filterRegion) return false
+    // If class-level filters active, only show clubs with matching classes
+    if (filterType || filterGender || filterDays.length > 0) {
+      return getFilteredClasses(club.id).length > 0
+    }
+    return true
+  })
+
+  const totalFilteredClasses = filtered.reduce((sum, club) => sum + getFilteredClasses(club.id).length, 0)
 
   return (
     <div className="max-w-3xl space-y-5">
@@ -87,6 +146,7 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
         </p>
       </div>
 
+      {/* Search + inactive toggle */}
       <div className="flex gap-3 items-center">
         <input
           value={search}
@@ -99,6 +159,77 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
             className="w-4 h-4 accent-blue-500" />
           Show inactive
         </label>
+      </div>
+
+      {/* Filters panel */}
+      <div className="bg-[#1a1d27] border border-[#2e3350] rounded-xl p-4 space-y-3">
+        <div className="flex items-center gap-2 text-xs text-slate-400 font-medium uppercase tracking-wide">
+          <Filter className="w-3.5 h-3.5" />
+          Filters
+          {hasFilters && (
+            <button onClick={clearFilters} className="ml-auto text-blue-400 hover:text-blue-300 normal-case tracking-normal">
+              Clear all
+            </button>
+          )}
+        </div>
+
+        {/* Region, Type, Gender dropdowns */}
+        <div className="grid grid-cols-3 gap-2">
+          <select
+            value={filterRegion}
+            onChange={e => setFilterRegion(e.target.value)}
+            className="bg-[#0f1117] border border-[#2e3350] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+          >
+            <option value="">All Regions</option>
+            {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+
+          <select
+            value={filterType}
+            onChange={e => setFilterType(e.target.value)}
+            className="bg-[#0f1117] border border-[#2e3350] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+          >
+            <option value="">All Types</option>
+            <option value="Kids and Youth">Kids & Youth</option>
+            <option value="Juvenile and Adults">Juvenile & Adults</option>
+          </select>
+
+          <select
+            value={filterGender}
+            onChange={e => setFilterGender(e.target.value)}
+            className="bg-[#0f1117] border border-[#2e3350] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
+          >
+            <option value="">All Genders</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Mix">Mix</option>
+          </select>
+        </div>
+
+        {/* Days of week toggles */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-slate-500 font-medium">Days:</span>
+          {DAYS.map(day => (
+            <button
+              key={day}
+              onClick={() => toggleDay(day)}
+              className={cn(
+                'text-xs px-2.5 py-1 rounded-lg border font-medium transition-colors',
+                filterDays.includes(day)
+                  ? 'bg-blue-600 border-blue-500 text-white'
+                  : 'bg-[#0f1117] border-[#2e3350] text-slate-400 hover:text-white hover:border-slate-500'
+              )}
+            >
+              {DAY_ABBR[day]}
+            </button>
+          ))}
+        </div>
+
+        {hasFilters && (
+          <p className="text-xs text-slate-500">
+            {filtered.length} club{filtered.length !== 1 ? 's' : ''} · {totalFilteredClasses} class{totalFilteredClasses !== 1 ? 'es' : ''} match
+          </p>
+        )}
       </div>
 
       {/* Legend */}
@@ -123,10 +254,11 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
       ) : (
         <div className="space-y-3">
           {filtered.map(club => {
-            const allClubClasses = classesByClub[club.id] ?? []
-            const activeClasses = allClubClasses.filter(c => c.is_active)
+            const filteredClasses = getFilteredClasses(club.id)
+            const allActiveClasses = (classesByClub[club.id] ?? []).filter(c => c.is_active)
             const regionName = club.region_id ? regionMap[club.region_id] : null
             const isOpen = expanded === club.id
+            const displayClasses = hasFilters ? filteredClasses : allActiveClasses
 
             return (
               <div key={club.id} className="bg-[#1a1d27] border border-[#2e3350] rounded-xl overflow-hidden">
@@ -153,7 +285,10 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
                       )}
                       <span className="text-slate-600">·</span>
                       <span className="text-xs text-slate-400">
-                        {activeClasses.length} class{activeClasses.length !== 1 ? 'es' : ''}
+                        {hasFilters
+                          ? `${filteredClasses.length} of ${allActiveClasses.length} class${allActiveClasses.length !== 1 ? 'es' : ''}`
+                          : `${allActiveClasses.length} class${allActiveClasses.length !== 1 ? 'es' : ''}`
+                        }
                       </span>
                     </div>
                   </div>
@@ -165,13 +300,23 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
                 {/* Classes panel */}
                 {isOpen && (
                   <div className="border-t border-[#2e3350]">
-                    {activeClasses.length === 0 ? (
-                      <p className="px-5 py-4 text-xs text-slate-500">No active classes</p>
+                    {/* Weekly schedule calendar */}
+                    <div className="p-4 border-b border-[#2e3350]">
+                      <p className="text-xs font-medium text-slate-400 mb-3 uppercase tracking-wide">Weekly Schedule</p>
+                      <WeeklyCalendar
+                        slots={classesWithCoach
+                          .filter(c => c.club_id === club.id)
+                          .map(c => ({ ...c, id: c.class_id, days_of_week: c.days_of_week ?? [] }))}
+                        showCoach
+                      />
+                    </div>
+                    {displayClasses.length === 0 ? (
+                      <p className="px-5 py-4 text-xs text-slate-500">No classes match the current filters</p>
                     ) : (
                       <div className="divide-y divide-[#2e3350]">
-                        {activeClasses.map(cls => (
+                        {displayClasses.map(cls => (
                           <div key={cls.id} className="px-5 py-3.5 flex items-start gap-4">
-                            {/* Left: identifier + badges */}
+                            {/* Left: identifier + badges + days */}
                             <div className="flex-1 min-w-0 space-y-1.5">
                               <p className="text-sm font-medium text-white">
                                 {cls.class_identifier ?? 'Class'}
@@ -180,6 +325,23 @@ export default function ClubsManager({ clubs, classes, regions, programs }: Prop
                                 <TypeBadge value={cls.class_type} />
                                 <GenderBadge value={cls.gender} />
                               </div>
+                              {cls.days_of_week && cls.days_of_week.length > 0 && (
+                                <div className="flex gap-1 flex-wrap">
+                                  {cls.days_of_week.map(d => (
+                                    <span
+                                      key={d}
+                                      className={cn(
+                                        'text-[10px] px-1.5 py-0.5 rounded border font-medium',
+                                        filterDays.includes(d)
+                                          ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+                                          : 'text-slate-500 border-slate-700'
+                                      )}
+                                    >
+                                      {DAY_ABBR[d] ?? d}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
                             </div>
 
                             {/* Right: time */}

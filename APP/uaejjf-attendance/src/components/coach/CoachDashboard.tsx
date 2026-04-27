@@ -4,7 +4,20 @@ import Link from 'next/link'
 import { AlertCircle, CheckCircle2, XCircle, Clock, TrendingUp, CalendarCheck } from 'lucide-react'
 import { cn, formatTimeRange } from '@/lib/utils'
 import { ATTENDANCE_CODES } from '@/lib/constants'
+import WeeklyCalendar from '@/components/shared/WeeklyCalendar'
 import type { DailyAttendanceStatus } from '@/types'
+
+interface WeekSlot {
+  id: string
+  class_identifier: string | null
+  class_type: string | null
+  gender: string | null
+  time_start: string | null
+  time_end: string | null
+  days_of_week: string[]
+  club_name: string
+  status?: 'P' | 'C' | 'H' | 'N' | 'R' | null
+}
 
 interface Props {
   psNumber: string
@@ -12,9 +25,10 @@ interface Props {
   todayClasses: DailyAttendanceStatus[]
   pendingCount: number
   monthStats: { present: number; cancelled: number; lateReports: number }
+  weekSlots: WeekSlot[]
 }
 
-export default function CoachDashboard({ psNumber, coachName, todayClasses, pendingCount, monthStats }: Props) {
+export default function CoachDashboard({ psNumber, coachName, todayClasses, pendingCount, monthStats, weekSlots }: Props) {
   const today = new Date().toLocaleDateString('en-AE', { weekday: 'long', day: 'numeric', month: 'long' })
   const submittedToday = todayClasses.filter(c => c.attendance_id).length
   const totalToday = todayClasses.length
@@ -112,6 +126,16 @@ export default function CoachDashboard({ psNumber, coachName, todayClasses, pend
             })}
           </ul>
         )}
+      </div>
+
+      {/* Weekly calendar */}
+      <div className="bg-[#1a1d27] rounded-xl border border-[#2e3350] overflow-hidden">
+        <div className="px-4 py-3 border-b border-[#2e3350]">
+          <h2 className="text-sm font-semibold text-white">This Week</h2>
+        </div>
+        <div className="p-3">
+          <WeeklyCalendar slots={weekSlots} />
+        </div>
       </div>
 
       {/* Quick actions */}
