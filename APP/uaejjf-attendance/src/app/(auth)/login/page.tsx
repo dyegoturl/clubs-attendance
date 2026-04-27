@@ -28,48 +28,34 @@ export default function LoginPage() {
     setLoading(true)
     const supabase = createClient()
     try {
-      // Look up coach by PS number to get their email (used as Supabase auth identity)
-      const { data: coach, error: coachErr } = await supabase
-        .from('coaches')
-        .select('email, ps_number')
-        .eq('ps_number', data.ps_number.toUpperCase())
-        .single()
-
-      if (coachErr || !coach?.email) {
-        // Check supervisors (log in with email)
-        const { data: supervisor } = await supabase
-          .from('supervisors')
+      // Resolve email: coaches use PS number → email lookup; admins/supervisors type email directly
+      let loginEmail = data.ps_number
+      if (!data.ps_number.includes('@')) {
+        const { data: coach } = await supabase
+          .from('coaches')
           .select('email')
-          .eq('email', data.ps_number)
+          .eq('ps_number', data.ps_number.toUpperCase())
           .single()
-
-        // If not a coach or supervisor, try as email directly (admin accounts)
-        if (!supervisor && !data.ps_number.includes('@')) {
+        if (!coach?.email) {
           toast.error('PS Number not found. Check your credentials.')
           return
         }
+        loginEmail = coach.email
       }
 
-      // Coaches use their email, supervisors/admins type their email directly
-      const loginEmail = coach?.email ?? data.ps_number
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password: data.password,
       })
-
-      if (error) {
+      if (error || !authData.user) {
         toast.error('Incorrect password. Try again.')
         return
       }
 
-      // Fetch role and redirect
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.id)
+        .eq('id', authData.user.id)
         .single()
 
       const role = profile?.role

@@ -30,19 +30,12 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
 
-  // Public routes
+  // Public routes — allow through
   if (pathname.startsWith('/login') || pathname.startsWith('/api/cron')) {
+    // If already logged in and hitting /login, send to root — page-level redirects handle the rest
     if (user && pathname.startsWith('/login')) {
-      const profile = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-      const role = profile.data?.role
       const redirectUrl = request.nextUrl.clone()
-      redirectUrl.pathname = role === 'admin' ? '/admin/dashboard'
-        : role === 'supervisor' ? '/supervisor/dashboard'
-        : '/coach/dashboard'
+      redirectUrl.pathname = '/'
       return NextResponse.redirect(redirectUrl)
     }
     return supabaseResponse
@@ -55,26 +48,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Role-based route guarding
-  const profile = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  const role = profile.data?.role
-
-  if (pathname.startsWith('/admin') && role !== 'admin') {
-    const url = request.nextUrl.clone()
-    url.pathname = role === 'supervisor' ? '/supervisor/dashboard' : '/coach/dashboard'
-    return NextResponse.redirect(url)
-  }
-
-  if (pathname.startsWith('/supervisor') && role === 'coach') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/coach/dashboard'
-    return NextResponse.redirect(url)
-  }
-
+  // Role-based route guarding is handled at the page level (each page does redirect on wrong role)
   return supabaseResponse
 }
