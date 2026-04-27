@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, CalendarCheck, History, Bell, Users, Settings, SlidersHorizontal,
-  LogOut, ClipboardList, BarChart3, Shield, ChevronLeft, ChevronRight, Menu, X
+  LogOut, ClipboardList, BarChart3, Shield, ChevronLeft, ChevronRight, Menu, X, FileDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -22,6 +22,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { href: '/coach/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/coach/attendance', label: 'Attendance', icon: CalendarCheck },
     { href: '/coach/history', label: 'My History', icon: History },
+    { href: '/coach/sign-in-sheet', label: 'Sign-In Sheet', icon: FileDown },
   ],
   supervisor: [
     { href: '/supervisor/dashboard', label: 'Overview', icon: LayoutDashboard },
