@@ -4,6 +4,13 @@ export const CLASS_TYPES = ['Kids and Youth', 'Juvenile and Adults'] as const
 export const GENDERS = ['Male', 'Female', 'Mix'] as const
 export const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
+export const ABSENCE_REASONS = [
+  { code: 'N' as const, label: 'Sick' },
+  { code: 'R' as const, label: 'Replaced' },
+  { code: 'C' as const, label: 'Class Canceled' },
+  { code: 'H' as const, label: 'Tournament' },
+] satisfies { code: 'P' | 'C' | 'H' | 'N' | 'R'; label: string }[]
+
 export const ATTENDANCE_CODES = {
   P: { label: 'Present',     color: 'green',  bg: 'bg-green-500/20',  text: 'text-green-400',  border: 'border-green-500/30' },
   C: { label: 'Cancelled',   color: 'amber',  bg: 'bg-amber-500/20',  text: 'text-amber-400',  border: 'border-amber-500/30' },

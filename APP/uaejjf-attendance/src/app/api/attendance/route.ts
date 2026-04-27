@@ -8,21 +8,32 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { class_id, date, status, student_count, notes, is_adhoc, coach_ps_number } = body
+  const { class_id, date, status, student_count, notes, is_adhoc, coach_ps_number, proxy_by } = body
 
   if (!class_id || !date || !status) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  // Verify the coach_ps_number matches the authenticated user
-  const { data: coach } = await supabase
-    .from('coaches')
-    .select('ps_number')
-    .eq('user_id', user.id)
+  // Determine if this is a proxy submission (supervisor/admin reporting on behalf of coach)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
     .single()
 
-  if (!coach || coach.ps_number !== coach_ps_number) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isProxy = proxy_by && (profile?.role === 'supervisor' || profile?.role === 'admin')
+
+  if (!isProxy) {
+    // Normal coach flow: verify ownership
+    const { data: coach } = await supabase
+      .from('coaches')
+      .select('ps_number')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!coach || coach.ps_number !== coach_ps_number) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   // Check if attendance already exists for this class/date
@@ -71,14 +82,18 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     // Update existing record
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: any = { status, student_count: student_count ?? null, notes: notes ?? null }
+    if (isProxy) { updates.modified_by_id = user.id; updates.modified_at = new Date().toISOString() }
     const { error } = await supabase
       .from('attendance_records')
-      .update({ status, student_count: student_count ?? null, notes: notes ?? null })
+      .update(updates)
       .eq('id', existing.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {
     // Insert new record
-    const { error } = await supabase.from('attendance_records').insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const record: any = {
       class_id,
       coach_ps_number,
       date,
@@ -86,7 +101,9 @@ export async function POST(req: NextRequest) {
       student_count: student_count ?? null,
       notes: notes ?? null,
       is_adhoc: is_adhoc ?? false,
-    })
+    }
+    if (isProxy) record.modified_by_id = user.id
+    const { error } = await supabase.from('attendance_records').insert(record)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
